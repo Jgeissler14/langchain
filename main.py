@@ -11,7 +11,7 @@ dotenv.load_dotenv()
 
 # Create the agent
 memory = MemorySaver()
-model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+model = init_chat_model("gemini-2.5-flash-lite-preview-06-17", model_provider="google_genai")
 
 search = TavilySearch(max_results=2)
 tools = [search]
@@ -22,8 +22,18 @@ config = {"configurable": {"thread_id": "abc123"}}
 
 input_message = {
     "role": "user",
-    "content": "Hi, I'm Bob and I life in SF.",
+    "content": "Hi, I'm Bob and I life in San Francisco.",
 }
+for step in agent_executor.stream(
+    {"messages": [input_message]}, config, stream_mode="values"
+):
+    step["messages"][-1].pretty_print()
+
+input_message = {
+    "role": "user",
+    "content": "What's the weather where I live?",
+}
+
 for step in agent_executor.stream(
     {"messages": [input_message]}, config, stream_mode="values"
 ):
