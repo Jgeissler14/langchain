@@ -39,3 +39,4 @@ def write(request: WriterRequest):
 @app.get("/")
 def health_check():
     return {"status": "ok"}
+

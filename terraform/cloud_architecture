@@ -1,0 +1,35 @@
+digraph "Cloud Architecture" {
+	graph [fontcolor="#2D3436" fontname="Sans-Serif" fontsize=15 label="Cloud Architecture" nodesep=0.60 pad=2.0 rankdir=LR ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	c70e78365e1846ffab456aac735d7094 [label=User height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/generic/network/router.png" shape=none]
+	c70e78365e1846ffab456aac735d7094 -> "32eb5145364c4c3dab9088b506fa074b" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"32eb5145364c4c3dab9088b506fa074b" -> ef5d0bff9bd7450a9cfb06b5695c3ace [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	ef5d0bff9bd7450a9cfb06b5695c3ace -> "2890d24680884630bb0f8c2b1170c2bb" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2890d24680884630bb0f8c2b1170c2bb" -> "0c2236b2dd0849c1a6782279a781a12a" [label="/research" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2890d24680884630bb0f8c2b1170c2bb" -> "39fd64bf0b3d45be9eba491f4fee155a" [label="/write" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"0c2236b2dd0849c1a6782279a781a12a" -> "0b839a364d594d589d7eae65c6cb573c" [dir=back fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"39fd64bf0b3d45be9eba491f4fee155a" -> c55180414a4542b3b7f2805cfdf5290c [dir=back fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	subgraph "cluster_AWS Cloud" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="AWS Cloud" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		subgraph cluster_VPC {
+			graph [bgcolor="#EBF3E7" fontname="Sans-Serif" fontsize=12 label=VPC labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"32eb5145364c4c3dab9088b506fa074b" [label="Internet Gateway" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/network/internet-gateway.png" shape=none]
+			subgraph "cluster_Public Subnets" {
+				graph [bgcolor="#ECE8F6" fontname="Sans-Serif" fontsize=12 label="Public Subnets" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+				"2890d24680884630bb0f8c2b1170c2bb" [label="Application Load Balancer" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/network/elastic-load-balancing.png" shape=none]
+			}
+			ef5d0bff9bd7450a9cfb06b5695c3ace [label="Route Table" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/network/route-table.png" shape=none]
+		}
+		subgraph cluster_ECR {
+			graph [bgcolor="#EBF3E7" fontname="Sans-Serif" fontsize=12 label=ECR labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"0b839a364d594d589d7eae65c6cb573c" [label="Researcher ECR Repository" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/compute/ec2-container-registry.png" shape=none]
+			c55180414a4542b3b7f2805cfdf5290c [label="Writer ECR Repository" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/compute/ec2-container-registry.png" shape=none]
+		}
+		subgraph "cluster_ECS Cluster (Fargate)" {
+			graph [bgcolor="#EBF3E7" fontname="Sans-Serif" fontsize=12 label="ECS Cluster (Fargate)" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"0c2236b2dd0849c1a6782279a781a12a" [label="Researcher Service" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/compute/elastic-container-service.png" shape=none]
+			"39fd64bf0b3d45be9eba491f4fee155a" [label="Writer Service" height=1.9 image="/Users/joshuageissler/youtube/langchain/.venv/lib/python3.13/site-packages/resources/aws/compute/elastic-container-service.png" shape=none]
+		}
+	}
+}
