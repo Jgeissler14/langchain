@@ -1,0 +1,96 @@
+graph TD
+    subgraph Internet
+        User(User)
+    end
+
+    subgraph AWS Cloud
+        subgraph VPC [VPC (10.0.0.0/16)]
+            direction LR
+            IGW[Internet Gateway]
+            PublicSubnets(Public Subnets)
+            PublicRT[Public Route Table]
+            ALBSG[ALB Security Group]
+            ECSServiceSG[ECS Service Security Group]
+
+            VPC --- PublicSubnets
+            VPC --- IGW
+            PublicSubnets --- PublicRT
+            PublicRT -- "0.0.0.0/0" --> IGW
+
+            ALB[Application Load Balancer]
+            ALB -- "in: 80/tcp" --> ALBSG
+            ALBSG -- "out: all" --> Internet
+
+            PublicSubnets --- ALB
+
+            subgraph ECS Cluster
+                ECSCluster[ECS Cluster]
+                ResearcherService[Researcher Service (Fargate)]
+                WriterService[Writer Service (Fargate)]
+
+                ECSCluster --- ResearcherService
+                ECSCluster --- WriterService
+
+                ResearcherService -- "in: 80/tcp" --> ECSServiceSG
+                WriterService -- "in: 80/tcp" --> ECSServiceSG
+
+                PublicSubnets --- ResearcherService
+                PublicSubnets --- WriterService
+            end
+
+            ALB -- "HTTP:80" --> ALBListener[ALB Listener]
+            ALBListener -- "/research*, /" --> ResearcherTG[Researcher Target Group]
+            ALBListener -- "/write*" --> WriterTG[Writer Target Group]
+
+            ResearcherTG --> ResearcherService
+            WriterTG --> WriterService
+
+            subgraph ECR Repositories
+                ResearcherECR[ECR: researcher]
+                WriterECR[ECR: writer]
+            end
+
+            ResearcherTaskDef[Researcher Task Definition]
+            WriterTaskDef[Writer Task Definition]
+
+            ResearcherService -- "uses" --> ResearcherTaskDef
+            WriterService -- "uses" --> WriterTaskDef
+
+            ResearcherTaskDef -- "image from" --> ResearcherECR
+            WriterTaskDef -- "image from" --> WriterECR
+
+            subgraph IAM Roles
+                ECSTaskExecutionRole[IAM Role: ECS Task Execution]
+                ECSTaskRole[IAM Role: ECS Task]
+                GitHubActionsRole[IAM Role: GitHub Actions]
+            end
+
+            ResearcherTaskDef -- "exec role" --> ECSTaskExecutionRole
+            WriterTaskDef -- "exec role" --> ECSTaskExecutionRole
+            ResearcherTaskDef -- "task role" --> ECSTaskRole
+            WriterTaskDef -- "task role" --> ECSTaskRole
+
+            subgraph CloudWatch Logs
+                ResearcherLogGroup[CloudWatch Log Group: /ecs/researcher]
+                WriterLogGroup[CloudWatch Log Group: /ecs/writer]
+            end
+
+            ResearcherTaskDef -- "logs to" --> ResearcherLogGroup
+            WriterTaskDef -- "logs to" --> WriterLogGroup
+
+            SSMParameterStore[SSM Parameter Store: /openai_api_key]
+            WriterTaskDef -- "gets" --> SSMParameterStore
+
+        end
+    end
+
+    subgraph External
+        GitHubActions[GitHub Actions]
+    end
+
+    User --> ALB
+    GitHubActions -- "assumes" --> GitHubActionsRole
+    GitHubActionsRole -- "pushes images" --> ResearcherECR
+    GitHubActionsRole -- "pushes images" --> WriterECR
+    GitHubActionsRole -- "updates service" --> ResearcherService
+    GitHubActionsRole -- "updates service" --> WriterService

@@ -1,0 +1,66 @@
+# .github/workflows/deploy.yml
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: langchain-agents
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push researcher image to Amazon ECR
+        env:
+          ECR_REPOSITORY: ${{ env.PROJECT_NAME }}/researcher
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./agents/researcher
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Build, tag, and push writer image to Amazon ECR
+        env:
+          ECR_REPOSITORY: ${{ env.PROJECT_NAME }}/writer
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./agents/writer
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Update researcher ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.PROJECT_NAME }}-cluster \
+            --service ${{ env.PROJECT_NAME }}-researcher-service \
+            --task-definition $(aws ecs describe-task-definition --task-definition ${{ env.PROJECT_NAME }}-researcher-task --query 'taskDefinition.taskDefinitionArn' --output text) \
+            --force-new-deployment
+
+      - name: Update writer ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.PROJECT_NAME }}-cluster \
+            --service ${{ env.PROJECT_NAME }}-writer-service \
+            --task-definition $(aws ecs describe-task-definition --task-definition ${{ env.PROJECT_NAME }}-writer-task --query 'taskDefinition.taskDefinitionArn' --output text) \
+            --force-new-deployment
