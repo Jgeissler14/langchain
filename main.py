@@ -11,7 +11,7 @@ dotenv.load_dotenv()
 
 # Create the agent
 memory = MemorySaver()
-model = init_chat_model("gemini-2.5-flash-lite-preview-06-17", model_provider="google_genai")
+model = init_chat_model("gemini-2.5-flash", model_provider="google_genai")
 
 search = TavilySearch(max_results=2)
 tools = [search]
