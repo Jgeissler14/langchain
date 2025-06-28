@@ -509,3 +509,21 @@ data "aws_availability_zones" "available" {
 
 # Data source for AWS Caller Identity
 data "aws_caller_identity" "current" {}
+
+# Data source for Route 53 Hosted Zone
+data "aws_route53_zone" "selected" {
+  name         = "cloudzap.co."
+  private_zone = false
+}
+
+# Route 53 Record for agentic-ai.cloudzap.co
+resource "aws_route53_record" "agentic_ai" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = "agentic-ai.cloudzap.co"
+  type    = "A"
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
